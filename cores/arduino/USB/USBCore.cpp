@@ -303,7 +303,7 @@ void USBDeviceClass::init()
 
 	// Put Generic Clock Generator 0 as source for Generic Clock Multiplexer 6 (USB reference)
 	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(6)     | // Generic Clock Multiplexer 6
-	                    GCLK_CLKCTRL_GEN_GCLK0 | // Generic Clock Generator 0 is source
+	                    GCLK_CLKCTRL_GEN_GCLK6 | // Generic Clock Generator 6 is source
 	                    GCLK_CLKCTRL_CLKEN;
 	while (GCLK->STATUS.bit.SYNCBUSY)
 		;
