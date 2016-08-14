@@ -17,46 +17,46 @@
 
 # CrystalFreeZero
 # ---------------------------------------
-arduino_zero_native.name=CrystalFreeZero
-arduino_zero_native.vid.0=0x2341
-arduino_zero_native.pid.0=0x804d
-arduino_zero_native.vid.1=0x2341
-arduino_zero_native.pid.1=0x004d
+arduino_zero_crystalfree.name=CrystalFreeZero
+arduino_zero_crystalfree.vid.0=0x2341
+arduino_zero_crystalfree.pid.0=0x804d
+arduino_zero_crystalfree.vid.1=0x2341
+arduino_zero_crystalfree.pid.1=0x004d
 
-arduino_zero_native.vid.2=0x2341
-arduino_zero_native.pid.2=0x824d
+arduino_zero_crystalfree.vid.2=0x2341
+arduino_zero_crystalfree.pid.2=0x824d
 # If the board is a 2341:824d use 2341:824d for build and set other parameters as well
-arduino_zero_native.vid.2.build.vid=0x2341
-arduino_zero_native.vid.2.build.pid=0x824d
-arduino_zero_native.vid.2.build.usb_product="Genuino Zero"
-arduino_zero_native.vid.2.bootloader.file=zero/samd21_sam_ba_genuino.bin
+arduino_zero_crystalfree.vid.2.build.vid=0x2341
+arduino_zero_crystalfree.vid.2.build.pid=0x824d
+arduino_zero_crystalfree.vid.2.build.usb_product="Genuino Zero"
+arduino_zero_crystalfree.vid.2.bootloader.file=zero/samd21_sam_ba_genuino.bin
 
-arduino_zero_native.vid.3=0x2341
-arduino_zero_native.pid.3=0x024d
+arduino_zero_crystalfree.vid.3=0x2341
+arduino_zero_crystalfree.pid.3=0x024d
 # If the board is a 2341:024d use 2341:824d for build and set other parameters as well
-arduino_zero_native.vid.3.build.vid=0x2341
-arduino_zero_native.vid.3.build.pid=0x824d
-arduino_zero_native.vid.3.build.usb_product="Genuino Zero"
-arduino_zero_native.vid.3.bootloader.file=zero/samd21_sam_ba_genuino.bin
+arduino_zero_crystalfree.vid.3.build.vid=0x2341
+arduino_zero_crystalfree.vid.3.build.pid=0x824d
+arduino_zero_crystalfree.vid.3.build.usb_product="Genuino Zero"
+arduino_zero_crystalfree.vid.3.bootloader.file=zero/samd21_sam_ba_genuino.bin
 
-arduino_zero_native.upload.tool=bossac
-arduino_zero_native.upload.protocol=sam-ba
-arduino_zero_native.upload.maximum_size=262144
-arduino_zero_native.upload.use_1200bps_touch=true
-arduino_zero_native.upload.wait_for_upload_port=true
-arduino_zero_native.upload.native_usb=true
-arduino_zero_native.build.mcu=cortex-m0plus
-arduino_zero_native.build.f_cpu=48000000L
-arduino_zero_native.build.usb_product="Arduino Zero"
-arduino_zero_native.build.usb_manufacturer="Arduino LLC"
-arduino_zero_native.build.board=SAMD_ZERO
-arduino_zero_native.build.core=arduino
-arduino_zero_native.build.extra_flags=-D__SAMD21G18A__ {build.usb_flags}
-arduino_zero_native.build.ldscript=linker_scripts/gcc/flash_with_bootloader.ld
-arduino_zero_native.build.openocdscript=openocd_scripts/arduino_zero.cfg
-arduino_zero_native.build.variant=arduino_zero
-arduino_zero_native.build.variant_system_lib=
-arduino_zero_native.build.vid=0x2341
-arduino_zero_native.build.pid=0x804d
-arduino_zero_native.bootloader.tool=openocd
-arduino_zero_native.bootloader.file=zero/samd21_sam_ba.bin
+arduino_zero_crystalfree.upload.tool=bossac
+arduino_zero_crystalfree.upload.protocol=sam-ba
+arduino_zero_crystalfree.upload.maximum_size=262144
+arduino_zero_crystalfree.upload.use_1200bps_touch=true
+arduino_zero_crystalfree.upload.wait_for_upload_port=true
+arduino_zero_crystalfree.upload.native_usb=true
+arduino_zero_crystalfree.build.mcu=cortex-m0plus
+arduino_zero_crystalfree.build.f_cpu=48000000L
+arduino_zero_crystalfree.build.usb_product="Arduino Zero"
+arduino_zero_crystalfree.build.usb_manufacturer="Arduino LLC"
+arduino_zero_crystalfree.build.board=SAMD_ZERO
+arduino_zero_crystalfree.build.core=arduino
+arduino_zero_crystalfree.build.extra_flags=-D__SAMD21G18A__ {build.usb_flags}
+arduino_zero_crystalfree.build.ldscript=linker_scripts/gcc/flash_with_bootloader.ld
+arduino_zero_crystalfree.build.openocdscript=openocd_scripts/arduino_zero.cfg
+arduino_zero_crystalfree.build.variant=arduino_zero
+arduino_zero_crystalfree.build.variant_system_lib=
+arduino_zero_crystalfree.build.vid=0x2341
+arduino_zero_crystalfree.build.pid=0x804d
+arduino_zero_crystalfree.bootloader.tool=openocd
+arduino_zero_crystalfree.bootloader.file=zero/samd21_sam_ba.bin
