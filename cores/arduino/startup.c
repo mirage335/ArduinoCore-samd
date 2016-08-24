@@ -21,23 +21,18 @@
 
 #include <stdio.h>
 
-#define NVM_SW_CALIB_DFLL48M_COARSE_VAL   (58)
-#define NVM_SW_CALIB_DFLL48M_FINE_VAL     (64)
-
-
 /**
  * \brief system_init() configures the needed clocks and according Flash Read Wait States.
  * At reset:
  * - OSC8M clock source is enabled with a divider by 8 (1MHz).
  * - Generic Clock Generator 0 (GCLKMAIN) is using OSC8M as source.
  * We need to:
- * 1) Enable XOSC32K clock (External on-board 32.768Hz oscillator), will be used as DFLL48M reference.
- * 2) Put XOSC32K as source of Generic Clock Generator 1
- * 3) Put Generic Clock Generator 1 as source for Generic Clock Multiplexer 0 (DFLL48M reference)
- * 4) Enable DFLL48M clock
- * 5) Switch Generic Clock Generator 0 to DFLL48M. CPU will run at 48MHz.
- * 6) Modify PRESCaler value of OSCM to have 8MHz
- * 7) Put OSC8M as source for Generic Clock Generator 3
+ * 1) Enable OSC32K clock (Internal on-board 32.768Hz oscillator)
+ * 2) Put OSC32K as source of Generic Clock Generator 1
+ * 3) Enable DFLL48M clock
+ * 4) Switch Generic Clock Generator 0 to DFLL48M. CPU will run at 48MHz.
+ * 5) Modify PRESCaler value of OSCM to have 8MHz
+ * 6) Put OSC8M as source for Generic Clock Generator 3
  */
 // Constants for Clock generators
 #define GENERIC_CLOCK_GENERATOR_MAIN      (0u)
@@ -49,19 +44,16 @@
 // Constants for Clock multiplexers
 #define GENERIC_CLOCK_MULTIPLEXER_DFLL48M (0u)
 
-
-
+#define NVM_SW_CALIB_DFLL48M_COARSE_VAL   (58)
+#define NVM_SW_CALIB_DFLL48M_FINE_VAL     (64)
 
 void SystemInit(void)
 {
   /* Set 1 Flash Wait State for 48MHz, cf tables 20.9 and 35.27 in SAMD21 Datasheet */
   NVMCTRL->CTRLB.bit.RWS = 1;//NVMCTRL_CTRLB_RWS_HALF_Val;
 
-  /* Turn on the digital interface clock */
+  /* Turn on the digital interface clock, See 15.8.8, p. 137 */
   PM->APBAMASK.reg |= PM_APBAMASK_GCLK;
-
-
-  
 
   /* ----------------------------------------------------------------------------------------------
    * 1) Enable OSC32K clock (Internal on-board 32.768Hz oscillator)
@@ -94,25 +86,6 @@ void SystemInit(void)
     /* Wait for reset to complete */
   }
 
-  /* Set OSC8M divisor to 1, CPU is now running at 8MHz */
-  SYSCTRL->OSC8M.bit.PRESC = SYSCTRL_OSC8M_PRESC_1_Val;
-  SYSCTRL->OSC8M.bit.ONDEMAND = 0;
-  
-
-  GCLK->GENDIV.reg = GCLK_GENDIV_ID( GENERIC_CLOCK_GENERATOR_OSC1M ) | GCLK_GENDIV_DIV(3); // Generic Clock Generator 5, divided by 8 (2^3)
-  while ( GCLK->STATUS.reg & GCLK_STATUS_SYNCBUSY )  {    /* Wait for synchronization */  }
-  
-
-  GCLK->GENCTRL.reg = GCLK_GENCTRL_ID( GENERIC_CLOCK_GENERATOR_OSC1M ) | // Generic Clock Generator 5
-                      GCLK_GENCTRL_SRC_OSC8M | // Selected source is 8MHz Oscillator
-                      GCLK_GENCTRL_DIVSEL| //divided by 8
-//                      GCLK_GENCTRL_OE | // Output clock to a pin for tests
-                      GCLK_GENCTRL_GENEN;
-
-  while ( GCLK->STATUS.reg & GCLK_STATUS_SYNCBUSY )  {    /* Wait for synchronization */  }
-
-
-  
   /* ----------------------------------------------------------------------------------------------
    * 2) Put OSC32K as source of Generic Clock Generator 1
    */
@@ -135,151 +108,45 @@ void SystemInit(void)
   {
     /* Wait for synchronization */
   }
-  
 
-/* Set PLL input to GCLK5 and lock timer input to GCLK1*/
-
-  uint32_t new_clkctrl_config = (0x1u << GCLK_CLKCTRL_ID_Pos) |  //PLL input clock source for reference
-                                (0x5u << GCLK_CLKCTRL_GEN_Pos);  // is set to clock gen 5
-  
-  *((uint8_t*)&GCLK->CLKCTRL.reg) = 0x1u; //pll input source
-  uint32_t prev_gen_id = GCLK->CLKCTRL.bit.GEN;
-  GCLK->CLKCTRL.bit.GEN = 0;
-
-	/* Disable the generic clock */
-	GCLK->CLKCTRL.reg &= ~GCLK_CLKCTRL_CLKEN;
-	while (GCLK->CLKCTRL.reg & GCLK_CLKCTRL_CLKEN) {
-		/* Wait for clock to become disabled */
-	}
-
-	/* Restore previous configured clock generator */
-	GCLK->CLKCTRL.bit.GEN = prev_gen_id;
-    GCLK->CLKCTRL.reg = new_clkctrl_config;
-    *((uint8_t*)&GCLK->CLKCTRL.reg) = 0x1u;
-
-	/* Enable the generic clock */
-	GCLK->CLKCTRL.reg |= GCLK_CLKCTRL_CLKEN;
-    
-    new_clkctrl_config = (0x2u << GCLK_CLKCTRL_ID_Pos) |  //PLL lock clock source for reference
-                                (0x1u << GCLK_CLKCTRL_GEN_Pos);  // is set to clock gen 1
-  
-  *((uint8_t*)&GCLK->CLKCTRL.reg) = 0x2u; //pll input source
-  prev_gen_id = GCLK->CLKCTRL.bit.GEN;
-  GCLK->CLKCTRL.bit.GEN = 0;
-
-	/* Disable the generic clock */
-	GCLK->CLKCTRL.reg &= ~GCLK_CLKCTRL_CLKEN;
-	while (GCLK->CLKCTRL.reg & GCLK_CLKCTRL_CLKEN) {
-		/* Wait for clock to become disabled */
-	}
-
-	/* Restore previous configured clock generator */
-	GCLK->CLKCTRL.bit.GEN = prev_gen_id;
-    GCLK->CLKCTRL.reg = new_clkctrl_config;
-    *((uint8_t*)&GCLK->CLKCTRL.reg) = 0x2u;
-
-	/* Enable the generic clock */
-	GCLK->CLKCTRL.reg |= GCLK_CLKCTRL_CLKEN;
-    
-    
-/*configure PLL*/
-    //integer multiplier (LDR) needs to be 95 , as output frequency is input*(LDR+1+(LDRFRAC/16))/2
-    // I have no idea where the /2 is coming from
-    //LDRFRAC will be zero
-    SYSCTRL->DPLLCTRLA.reg = 0; // disable on demand mode and run in standby
-    SYSCTRL->DPLLRATIO.reg = SYSCTRL_DPLLRATIO_LDR(95);
-    SYSCTRL->DPLLCTRLB.reg =    SYSCTRL_DPLLCTRLB_REFCLK_GCLK;
-    
-    
-    SYSCTRL->DPLLCTRLA.reg |= SYSCTRL_DPLLCTRLA_ENABLE;
-  
-  
-  /* */
-  /* ----------------------------------------------------------------------------------------------
-   * 3) Put Generic Clock Generator 1 as source for Generic Clock Multiplexer 0 (DFLL48M reference)
-   */
-  GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID( GENERIC_CLOCK_MULTIPLEXER_DFLL48M ) | // Generic Clock Multiplexer 0
-                      GCLK_CLKCTRL_GEN_GCLK1 | // Generic Clock Generator 1 is source
-                      GCLK_CLKCTRL_CLKEN;
-
-  while ( GCLK->STATUS.reg & GCLK_STATUS_SYNCBUSY )
-  {
-    /* Wait for synchronization */
-  }
 
   /* ----------------------------------------------------------------------------------------------
-   * 4) Enable DFLL48M clock
+   * 3) Enable DFLL48M clock
    */
 
-   SYSCTRL->DFLLCTRL.bit.ONDEMAND = 0;
-   
-   while ( (SYSCTRL->PCLKSR.reg & SYSCTRL_PCLKSR_DFLLRDY) == 0 )
-   {
-   /* Wait for synchronization */
-   }
-   uint32_t temp_genctrl;
-   GCLK_GENCTRL_Type genctrl;
-   genctrl.reg=0;
-   SYSCTRL_DFLLCTRL_Type dfllctrl_conf;
-   dfllctrl_conf.reg=0;
-   SYSCTRL_DFLLVAL_Type dfllval_conf;
-   dfllval_conf.reg=0;
-   
-   uint32_t coarse =( *((uint32_t *)(NVMCTRL_OTP4) + 
-                        (NVM_SW_CALIB_DFLL48M_COARSE_VAL / 32)) 
-                         >> (NVM_SW_CALIB_DFLL48M_COARSE_VAL % 32))
-                         & ((1 << 6) - 1);
-   if (coarse == 0x3f) {
-        coarse = 0x1f;
-   }
-   uint32_t fine =( *((uint32_t *)(NVMCTRL_OTP4)
-                    + (NVM_SW_CALIB_DFLL48M_FINE_VAL / 32))
-                    >> (NVM_SW_CALIB_DFLL48M_FINE_VAL % 32))
-                    & ((1 << 10) - 1);
-   if (fine == 0x3ff) {
-        fine = 0x1ff;
-   }
-   dfllval_conf.bit.COARSE = coarse;
-   dfllval_conf.bit.FINE = fine;
-   dfllctrl_conf.bit.USBCRM = 1;
-   dfllctrl_conf.bit.BPLCKC = 0;
-   dfllctrl_conf.bit.QLDIS = 0;
-   dfllctrl_conf.bit.CCDIS = 1;
-   dfllctrl_conf.bit.ENABLE = 1;
-   SYSCTRL->DFLLCTRL.bit.ONDEMAND = 0;
-   while (!(SYSCTRL->PCLKSR.reg & SYSCTRL_PCLKSR_DFLLRDY));
-   SYSCTRL->DFLLMUL.reg = 48000;
-   SYSCTRL->DFLLVAL.reg = dfllval_conf.reg;
-   SYSCTRL->DFLLCTRL.reg = dfllctrl_conf.reg;
-   GCLK_CLKCTRL_Type clkctrl;
-   clkctrl.reg=0;
-   uint16_t temp;
-   GCLK->CLKCTRL.bit.ID = 0; /* GCLK_ID - DFLL48M Reference */
-   temp = GCLK->CLKCTRL.reg;
-   clkctrl.bit.CLKEN = 1;
-   clkctrl.bit.WRTLOCK = 0;
-   clkctrl.bit.GEN = GCLK_CLKCTRL_GEN_GCLK3_Val;
-   GCLK->CLKCTRL.reg = (clkctrl.reg | temp);
+  /* DFLL Configuration in Open Loop mode,  16.6.7.1 p. 155 */
 
-
-   /* Configure DFLL48M as source for GCLK_GEN1 */
-   GCLK->GENCTRL.bit.ID = 6; /* GENERATOR_ID - GCLK_GEN_1 */
-   while(GCLK->STATUS.reg & GCLK_STATUS_SYNCBUSY);
-   temp_genctrl = GCLK->GENCTRL.reg;
-   genctrl.bit.SRC = GCLK_GENCTRL_SRC_DFLL48M_Val;
-   genctrl.bit.GENEN = 1;
-   genctrl.bit.RUNSTDBY = 0;
-   GCLK->GENCTRL.reg = (genctrl.reg | temp_genctrl);
-   while(GCLK->STATUS.reg & GCLK_STATUS_SYNCBUSY);
+  /* Remove the OnDemand mode, Bug http://avr32.icgroup.norway.atmel.com/bugzilla/show_bug.cgi?id=9905 */
+  SYSCTRL->DFLLCTRL.bit.ONDEMAND = 0 ;
 
   while ( (SYSCTRL->PCLKSR.reg & SYSCTRL_PCLKSR_DFLLRDY) == 0 )
   {
     /* Wait for synchronization */
   }
 
+#ifndef NVM_DFLL_COARSE_POS
+#define NVM_DFLL_COARSE_POS 26
+#endif
+
+  uint32_t coarse = *((uint32_t *)( NVMCTRL_OTP5+4 )) >> NVM_DFLL_COARSE_POS;
+  /* Read DFLL Open Loop calibration parameters from NVM Software Cailib Area */
+  SYSCTRL->DFLLVAL.reg = OSCCTRL_DFLLVAL_COARSE(value);
+
+  while ( (SYSCTRL->PCLKSR.reg & SYSCTRL_PCLKSR_DFLLRDY) == 0 )
+  {
+    /* Wait for synchronization */
+  }
+
+  /* Enable the DFLL */
+  SYSCTRL->DFLLCTRL.reg |= SYSCTRL_DFLLCTRL_ENABLE ;
+
+  while ( (SYSCTRL->PCLKSR.reg & SYSCTRL_PCLKSR_DFLLRDY) == 0 )
+  {
+    /* Wait for synchronization */
+  }
 
   /* ----------------------------------------------------------------------------------------------
-   * 5) Switch Generic Clock Generator 0 to PLL. CPU will run at 48MHz.
+   * 4) Switch Generic Clock Generator 0 to DFLL48M. CPU will run at 48MHz.
    */
   GCLK->GENDIV.reg = GCLK_GENDIV_ID( GENERIC_CLOCK_GENERATOR_MAIN ); // Generic Clock Generator 0
 
@@ -290,20 +157,24 @@ void SystemInit(void)
 
   /* Write Generic Clock Generator 0 configuration */
   GCLK->GENCTRL.reg = GCLK_GENCTRL_ID( GENERIC_CLOCK_GENERATOR_MAIN ) | // Generic Clock Generator 0
-                      (0x8u  << GCLK_GENCTRL_SRC_Pos) | // Selected source is DPLL 48MHz
-//                      (GCLK_GENCTRL_SRC_DFLL48M_Val  << GCLK_GENCTRL_SRC_Pos) | // Selected source is DPLL 48MHz
+                      GCLK_GENCTRL_SRC_DFLL48M | // Selected source is DFLL 48MHz
 //                      GCLK_GENCTRL_OE | // Output clock to a pin for tests
-                      GCLK_GENCTRL_GENEN;
+                      GCLK_GENCTRL_IDC | // Set 50/50 duty cycle
+                      GCLK_GENCTRL_GENEN ;
 
   while ( GCLK->STATUS.reg & GCLK_STATUS_SYNCBUSY )
   {
     /* Wait for synchronization */
   }
 
-
+  /* ----------------------------------------------------------------------------------------------
+   * 5) Modify PRESCaler value of OSC8M to have 8MHz
+   */
+  SYSCTRL->OSC8M.bit.PRESC = SYSCTRL_OSC8M_PRESC_1_Val ;
+  SYSCTRL->OSC8M.bit.ONDEMAND = 0 ;
 
   /* ----------------------------------------------------------------------------------------------
-   * 7) Put OSC8M as source for Generic Clock Generator 3
+   * 6) Put OSC8M as source for Generic Clock Generator 3
    */
   GCLK->GENDIV.reg = GCLK_GENDIV_ID( GENERIC_CLOCK_GENERATOR_OSC8M ); // Generic Clock Generator 3
 
@@ -311,7 +182,7 @@ void SystemInit(void)
   GCLK->GENCTRL.reg = GCLK_GENCTRL_ID( GENERIC_CLOCK_GENERATOR_OSC8M ) | // Generic Clock Generator 3
                       GCLK_GENCTRL_SRC_OSC8M | // Selected source is RC OSC 8MHz (already enabled at reset)
 //                      GCLK_GENCTRL_OE | // Output clock to a pin for tests
-                      GCLK_GENCTRL_GENEN;
+                      GCLK_GENCTRL_GENEN ;
 
   while ( GCLK->STATUS.reg & GCLK_STATUS_SYNCBUSY )
   {
@@ -320,18 +191,17 @@ void SystemInit(void)
 
   /*
    * Now that all system clocks are configured, we can set CPU and APBx BUS clocks.
-   * These values are normally the ones present after Reset.
+   * There values are normally the one present after Reset.
    */
   PM->CPUSEL.reg  = PM_CPUSEL_CPUDIV_DIV1;
   PM->APBASEL.reg = PM_APBASEL_APBADIV_DIV1_Val;
   PM->APBBSEL.reg = PM_APBBSEL_APBBDIV_DIV1_Val;
   PM->APBCSEL.reg = PM_APBCSEL_APBCDIV_DIV1_Val;
 
-
-  SystemCoreClock=48000000 ;
+  SystemCoreClock=48000000ul;
 
   /* ----------------------------------------------------------------------------------------------
-   * 8) Load ADC factory calibration values
+   * 7) Load ADC factory calibration values
    */
 
   // ADC Bias Calibration
@@ -346,7 +216,7 @@ void SystemInit(void)
   ADC->CALIB.reg = ADC_CALIB_BIAS_CAL(bias) | ADC_CALIB_LINEARITY_CAL(linearity);
 
   /*
-   * 9) Disable automatic NVM write operations
+   * 8) Disable automatic NVM write operations
    */
   NVMCTRL->CTRLB.bit.MANW = 1;
 }
